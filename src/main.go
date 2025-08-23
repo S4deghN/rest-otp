@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"os"
 
 	"rest-otp/db"
 	"rest-otp/util"
@@ -44,8 +45,8 @@ type Server struct {
 	syncChan chan struct{}
 }
 
-func NewServer() (*Server, error) {
-	dataBase, err := db.NewDb()
+func NewServer(dbDriver, dbDsn string) (*Server, error) {
+	dataBase, err := db.NewDb(dbDriver, dbDsn)
 	return &Server{
 		db:       dataBase,
 		syncChan: make(chan struct{}, 1),
@@ -237,9 +238,14 @@ func httpHandleWith(method, contentType string, f httpHandle) httpHandle {
 }
 
 func main() {
-	addr := ":8080"
+	serveAddr := ":8080"
 
-	server, err := NewServer()
+	dbHost := os.Getenv("DB_HOST")
+	if dbHost == "" {
+		dbHost = "localhost"
+	}
+
+	server, err := NewServer("mysql", "root:db@tcp("+dbHost+":3306)/db?parseTime=true")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -248,8 +254,8 @@ func main() {
 	http.HandleFunc("/auth/login", httpHandleWith("POST", "application/json", server.authLoginHandler))
 	http.HandleFunc("/admin/users", httpHandleWith("GET", "", server.adminUsersHandler))
 
-	log.Printf("Serving on %s", addr)
-	err = http.ListenAndServe(addr, nil)
+	log.Printf("Serving on %s", serveAddr)
+	err = http.ListenAndServe(serveAddr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

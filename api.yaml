@@ -1,0 +1,154 @@
+openapi: 3.0.3
+info:
+  title: OTP Authentication API
+  version: 1.0.0
+  description: |
+    REST API for OTP-based authentication and basic user management.
+    Provides OTP request, OTP login, and user listing endpoints.
+servers:
+  - url: http://0.0.0.0:8080
+paths:
+  /auth/otp-request:
+    post:
+      summary: Request an OTP
+      description: Generate and send a one-time password (OTP) to the provided phone number.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+              properties:
+                phone:
+                  type: string
+                  description: Phone number of the user
+                  example: "+15551234567"
+      responses:
+        "200":
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+        "400":
+          description: Invalid input (missing/invalid phone, already logged in, etc.)
+        "429":
+          description: Too many OTP requests. `Retry-After` header is included.
+          headers:
+            Retry-After:
+              description: Time to wait before retrying (HTTP-date format)
+              schema:
+                type: string
+        "500":
+          description: Server error (failed to save user or send OTP)
+
+  /auth/login:
+    post:
+      summary: Login with OTP
+      description: Verify OTP for a phone number and obtain a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+                - otp
+              properties:
+                phone:
+                  type: string
+                  example: "+15551234567"
+                otp:
+                  type: string
+                  example: "123456"
+      responses:
+        "200":
+          description: Successfully logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT authentication token
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400":
+          description: Invalid OTP, expired OTP, or missing fields
+        "500":
+          description: Server error (DB or JWT generation failure)
+
+  /admin/users:
+    get:
+      summary: List or fetch users
+      description: Fetch users by ID, or list users with pagination.
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          description: Fetch a single user by ID (phone number).
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+          description: Maximum number of users to return
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset
+      responses:
+        "200":
+          description: User(s) retrieved successfully
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/User"
+                  - type: array
+                    items:
+                      $ref: "#/components/schemas/User"
+        "500":
+          description: Server error
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Phone number (acts as user ID)
+        state:
+          type: string
+          enum: [pending, logged_in]
+        reg_date:
+          type: string
+          format: date-time
+        otp:
+          type: object
+          properties:
+            val:
+              type: string
+              description: OTP value (not normally exposed)
+            exp:
+              type: string
+              format: date-time
+              description: Expiration time
+            tries:
+              type: integer
+              description: Number of OTP attempts used
+            first_try:
+              type: string
+              format: date-time
+              description: Timestamp of first OTP request

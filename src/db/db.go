@@ -30,9 +30,10 @@ type DataBase struct {
 	db *sql.DB
 }
 
-func NewDb() (*DataBase, error) {
+func NewDb(driverName, dataSourceName string) (*DataBase, error) {
 	// root:db@tcp(localhost:3306)/db
-	db, err := sql.Open("mysql", "root:db@unix(/var/run/mysqld/mysqld.sock)/db?parseTime=true")
+	// db, err := sql.Open("mysql", "root:db@unix(/var/run/mysqld/mysqld.sock)/db?parseTime=true")
+	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
 	}
