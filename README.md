@@ -14,7 +14,7 @@ Users can request a one-time password (OTP) and use it to log in (receive JWT).
 
 ## Setup database
 
-The data base is setup inside a docker image anyways.
+The data base is set up inside a docker image anyways.
 
 ```sh
 $ cd docker
@@ -66,3 +66,4 @@ $ curl "http://localhost:8080/admin/users?limit=10"
 
 # API Documentation
 [View API Docs with Redoc](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/S4deghN/rest-otp/refs/heads/master/api.yaml)
+
