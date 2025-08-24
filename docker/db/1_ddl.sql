@@ -1,5 +1,3 @@
-SET @@sql_mode := REPLACE(@@sql_mode, 'NO_ZERO_DATE', '');
-
 DROP DATABASE IF EXISTS db;
 CREATE DATABASE db;
 USE db;
